@@ -1,0 +1,7 @@
+* {
+    -fx-font-family: "Ubuntu", System;
+
+}
+#root {
+    -fx-background-color: linear-gradient(to bottom right, #fd8989, #efa0a0);
+}
