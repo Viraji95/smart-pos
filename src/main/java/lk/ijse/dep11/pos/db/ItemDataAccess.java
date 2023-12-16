@@ -23,7 +23,7 @@ public class ItemDataAccess {
             STM_GET_ALL = connection.prepareStatement("SELECT * FROM item");
             STM_INSERT = connection.prepareStatement("INSERT INTO item (code, description, qty, unit_price) VALUES (?, ?, ?, ?)");
             STM_DELETE = connection.prepareStatement("DELETE FROM item WHERE code = ?");
-            STM_UPDATE = connection.prepareStatement("UPDATE item SET description = ?, qty = ?, unite_price = ? WHERE id = ?");
+            STM_UPDATE = connection.prepareStatement("UPDATE item SET description = ?, qty = ?, unit_price = ? WHERE code = ?");
             STM_EXISTS = connection.prepareStatement("SELECT code FROM item WHERE code = ?");
 
         } catch (SQLException e) {
@@ -49,7 +49,7 @@ public class ItemDataAccess {
         STM_INSERT.setString(2, item.getDescription());
         STM_INSERT.setInt(3, item.getQty());
         STM_INSERT.setBigDecimal(4, item.getUnitPrice());
-        STM_INSERT.executeQuery();
+        STM_INSERT.executeUpdate();
     }
 
     public static void updateItem(Item item) throws SQLException {
