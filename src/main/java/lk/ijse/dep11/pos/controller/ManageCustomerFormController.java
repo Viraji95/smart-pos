@@ -3,6 +3,7 @@ package lk.ijse.dep11.pos.controller;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -67,7 +68,7 @@ public class ManageCustomerFormController {
                 txtCustomerName.setText(cur.getName());
                 txtCustomerAddress.setText(cur.getAddress());
             }else {
-                btnSave.setText("SAVE");
+                btnSave.setText("Save");
                 btnDelete.setDisable(true);
             }
         });
@@ -98,7 +99,28 @@ public class ManageCustomerFormController {
     }
 
     public void btnSave_OnAction(ActionEvent actionEvent) {
-        if(!isDataValid()) return;
+        if (!isDataValid()) return;
+
+        Customer customer = new Customer(txtCustomerId.getText(),
+                txtCustomerName.getText().strip(), txtCustomerAddress.getText().strip());
+        try {
+            if (btnSave.getText().equals("Save")){
+                CustomerDataAccess.saveCustomer(customer);
+                tblCustomers.getItems().add(customer);
+            }else{
+                CustomerDataAccess.updateCustomer(customer);
+                ObservableList<Customer> customerList = tblCustomers.getItems();
+                Customer selectedCustomer = tblCustomers.getSelectionModel().getSelectedItem();
+                if(selectedCustomer != null && customerList.contains(selectedCustomer)) {
+                    customerList.set(customerList.indexOf(selectedCustomer), customer);
+                    tblCustomers.refresh();
+                }
+            }
+            btnAddNewCustomer.fire();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to save the customer, try again").show();
+        }
     }
 
     private boolean isDataValid() {
