@@ -7,13 +7,20 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.scene.control.cell.PropertyValueFactory;
+import lk.ijse.dep11.pos.db.CustomerDataAccess;
+import lk.ijse.dep11.pos.tm.Customer;
+
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 
 public class ManageCustomerFormController {
     public AnchorPane root;
@@ -22,7 +29,8 @@ public class ManageCustomerFormController {
     public JFXTextField txtCustomerAddress;
     public JFXButton btnSave;
     public JFXButton btnDelete;
-    public TableView tblCustomers;
+    public TableView<Customer> tblCustomers;
+    public JFXButton btnAddNewCustomer;
 
     public void navigateToHome(MouseEvent mouseEvent) throws IOException {
         URL resource = this.getClass().getResource("/view/MainForm.fxml");
@@ -34,10 +42,63 @@ public class ManageCustomerFormController {
         Platform.runLater(primaryStage::sizeToScene);
     }
 
-    public void btnAddNew_OnAction(ActionEvent actionEvent) {
+    public void initialize() {
+        tblCustomers.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
+        tblCustomers.getColumns().get(0).setStyle("-fx-alignment: center;");
+        tblCustomers.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("name"));
+        tblCustomers.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("address"));
+        txtCustomerId.setEditable(false);
+        btnDelete.setDisable(true);
+        btnSave.setDefaultButton(true);
+        btnAddNewCustomer.fire();
+
+        try{
+            tblCustomers.getItems().addAll(CustomerDataAccess.getAllCustomer());
+        }catch (SQLException e){
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to load customers, try later!").show();
+        }
+
+        tblCustomers.getSelectionModel().selectedItemProperty().addListener((ov, prev, cur) ->{
+            if(cur != null){
+                btnSave.setText("UPDATE");
+                btnDelete.setDisable(false);
+                txtCustomerId.setText(cur.getId());
+                txtCustomerName.setText(cur.getName());
+                txtCustomerAddress.setText(cur.getAddress());
+            }else {
+                btnSave.setText("SAVE");
+                btnDelete.setDisable(true);
+            }
+        });
+
+        Platform.runLater(txtCustomerName::requestFocus);
+    }
+
+    public void btnAddNew_OnAction(ActionEvent actionEvent) throws IOException {
+        for(TextField textField : new TextField[]{txtCustomerId, txtCustomerName, txtCustomerAddress})
+            textField.clear();
+        tblCustomers.getSelectionModel().clearSelection();
+        txtCustomerName.requestFocus();
+
+        try{
+            String lastCustomerId = CustomerDataAccess.getLastCustomerId();
+            if(lastCustomerId == null){
+                txtCustomerId.setText("C001");
+            }else {
+                int newId = Integer.parseInt(lastCustomerId.substring(1)) + 1;
+                txtCustomerId.setText(String.format("C%03d", newId));
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to establish the database conection, try again").show();
+            navigateToHome(null);
+        }
+
     }
 
     public void btnSave_OnAction(ActionEvent actionEvent) {
+        if(!isDataValid()) return;
     }
 
     public void btnDelete_OnAction(ActionEvent actionEvent) {
