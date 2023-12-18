@@ -101,6 +101,22 @@ public class ManageCustomerFormController {
         if(!isDataValid()) return;
     }
 
+    private boolean isDataValid() {
+        String name = txtCustomerName.getText().strip();
+        String address = txtCustomerAddress.getText().strip();
+
+        if(!name.matches("[A-Za-z ]{2,}")){
+            txtCustomerName.requestFocus();
+            txtCustomerName.selectAll();
+            return false;
+        }else if(address.length() < 3){
+            txtCustomerAddress.requestFocus();
+            txtCustomerAddress.selectAll();
+            return false;
+        }
+        return true;
+    }
+
     public void btnDelete_OnAction(ActionEvent actionEvent) {
     }
 }
