@@ -1,10 +1,11 @@
 package lk.ijse.dep11.pos.db;
 
 import lk.ijse.dep11.pos.tm.Order;
+import lk.ijse.dep11.pos.tm.OrderItem;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDataAccess {
@@ -55,8 +56,64 @@ public class OrderDataAccess {
     }
 
     public static List<Order> findOrders(String query) throws SQLException {
-        for(int i = 1; i <= 4; i++){
+        for (int i = 1; i < 4; i++)
             STM_FIND.setString(i, "%".concat(query).concat("%"));
+        ResultSet rst = STM_FIND.executeQuery();
+        List<Order> orderList = new ArrayList<>();
+        while (rst.next()) {
+            String orderId = rst.getString("id");
+            Date orderDate = rst.getDate("date");
+            String customerId = rst.getString("customer_id");
+            String customerName = rst.getString("name");
+            BigDecimal orderTotal = rst.getBigDecimal("total");
+            orderList.add(new Order(orderId, orderDate.toString(), customerId, customerName, orderTotal));
         }
+        return orderList;
+
+
+    }
+
+    public static void saveOrder(String orderId, Date orderDate, String customerId,
+                                 List<OrderItem> orderItemList) throws SQLException{
+        SingletonConnectionDataSource.getInstance().getConnection().setAutoCommit(false);
+        try{
+            STM_INSERT_ORDER.setString(1, orderId);
+            STM_INSERT_ORDER.setDate(2, orderDate);
+            STM_INSERT_ORDER.setString(3, customerId);
+            STM_INSERT_ORDER.executeUpdate();
+
+            for (OrderItem orderItem : orderItemList) {
+                STM_INSERT_ORDER_ITEM.setString(1, orderId);
+                STM_INSERT_ORDER_ITEM.setString(22, orderItem.getCode());
+                STM_INSERT_ORDER_ITEM.setInt(3, orderItem.getQty());
+                STM_INSERT_ORDER_ITEM.setBigDecimal(4, orderItem.getUnitPrice());
+                STM_INSERT_ORDER_ITEM.executeUpdate();
+
+                STM_UPDATE_STOCK.setInt(1, orderItem.getQty());
+                STM_UPDATE_STOCK.setString(2, orderItem.getCode());
+                STM_UPDATE_STOCK.executeUpdate();
+            }
+            SingletonConnectionDataSource.getInstance().getConnection().commit();
+        }catch (Throwable t){
+            SingletonConnectionDataSource.getInstance().getConnection().rollback();
+        }finally {
+            SingletonConnectionDataSource.getInstance().getConnection().setAutoCommit(true);
+        }
+
+    }
+
+    public static String getLastOrderId() throws SQLException{
+        ResultSet rst = STM_GET_LAST_ID.executeQuery();
+        return (rst.next()) ? rst.getString(1) : null;
+    }
+
+    public static boolean existsOrderByCustomerId(String customerId) throws SQLException{
+        STM_EXISTS_BY_CUSTOMER_ID.setString(1, customerId);
+        return STM_EXISTS_BY_CUSTOMER_ID.executeQuery().next();
+    }
+
+    public static boolean existsOrderByItemCode(String code) throws SQLException{
+        STM_EXISTS_BY_ITEM_CODE.setString(1, code);
+        return STM_EXISTS_BY_ITEM_CODE.executeQuery().next();
     }
 }
