@@ -16,6 +16,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.scene.control.cell.PropertyValueFactory;
 import lk.ijse.dep11.pos.db.CustomerDataAccess;
+import lk.ijse.dep11.pos.db.OrderDataAccess;
 import lk.ijse.dep11.pos.tm.Customer;
 
 
@@ -140,6 +141,21 @@ public class ManageCustomerFormController {
     }
 
     public void btnDelete_OnAction(ActionEvent actionEvent) {
-        // Todo
+        try {
+            if (OrderDataAccess.existsOrderByCustomerId(txtCustomerId.getText())) {
+                new Alert(Alert.AlertType.ERROR,
+                        "Unable to delete this customer, already associated with an order").show();
+
+            } else {
+                CustomerDataAccess.deleteCustomer(txtCustomerId.getText());
+                ObservableList<Customer> customerList = tblCustomers.getItems();
+                Customer selectedCustomer = tblCustomers.getSelectionModel().getSelectedItem();
+                customerList.remove(selectedCustomer);
+                if(customerList.isEmpty()) btnAddNewCustomer.fire();
+            }
+
+        }catch (SQLException e){
+            throw new RuntimeException(e);
+        }
     }
 }
