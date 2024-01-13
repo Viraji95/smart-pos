@@ -39,16 +39,11 @@ public class OrderDataAccess {
 //                    "WHERE o.id LIKE ? OR CAST(o.date AS VARCHAR(20)) LIKE ? OR o.customer_id LIKE ? OR c.name LIKE ? " +
 //                    "ORDER BY o.id");
             STM_FIND = connection.prepareStatement(
-                    "SELECT o.*, c.name, CAST(order_total.total AS DECIMAL(8,2))\n" +
-                            "FROM \"order\" AS o\n" +
-                            "         INNER JOIN customer AS c ON o.customer_id = c.id\n" +
-                            "        INNER JOIN\n" +
-                            "(SELECT o.id, SUM(qty * unit_price) AS total\n" +
-                            "FROM \"order\" AS o\n" +
-                            "         INNER JOIN order_item AS oi ON oi.order_id = o.id GROUP BY o.id) AS order_total\n" +
+                    "SELECT o.*, c.name, CAST(order_total.total AS DECIMAL(8,2)) FROM \"order\" As o INNER JOIN customer AS c ON o.customer_id = c.id INNER JOIN (SELECT o.id, SUM(oi.qty * oi.unit_price) AS total FROM \"order\" AS o INNER JOIN order_item AS oi ON o.id = oi.order_id GROUP BY o.id) AS order_total\n" +
                             "ON o.id = order_total.id\n" +
-                            "WHERE o.id LIKE ? OR o.date LIKE ? OR o.customer_id LIKE ? OR c.name LIKE ? " +
-                            "ORDER BY o.id");
+                            "WHERE o.id LIKE ? OR CAST(o.date AS VARCHAR(20)) LIKE ? OR o.customer_id LIKE ? OR c.name LIKE ? ORDER BY o.id;"
+            );
+
 
 
         } catch (SQLException e) {
@@ -57,7 +52,7 @@ public class OrderDataAccess {
     }
 
     public static List<Order> findOrders(String query) throws SQLException {
-        for (int i = 1; i < 4; i++)
+        for (int i = 1; i <= 4; i++)
             STM_FIND.setString(i, "%".concat(query).concat("%"));
         ResultSet rst = STM_FIND.executeQuery();
         List<Order> orderList = new ArrayList<>();
