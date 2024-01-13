@@ -21,9 +21,10 @@ public class OrderDataAccess {
     static {
         try {
             Connection connection = SingletonConnectionDataSource.getInstance().getConnection();
-            STM_INSERT_ORDER = connection.prepareStatement("INSERT INTO \"order\" (id, date, customer_id) VALUES (?,?,?)");
-            STM_INSERT_ORDER_ITEM = connection.prepareStatement("INSERT INTO order_item (order_id, item_code, qty, unit_price) VALUES (?,?,?,?)");
-            STM_UPDATE_STOCK = connection.prepareStatement("UPDATE item SET qty = qty - ? WHERE code = ?");
+            STM_INSERT_ORDER = connection
+                    .prepareStatement("INSERT INTO \"order\" (id, date, customer_id) VALUES (?,?,?)");
+            STM_INSERT_ORDER_ITEM = connection.prepareStatement
+                    ("INSERT INTO order_item (order_id, item_code, qty, unit_price) VALUES (?,?,?,?)");            STM_UPDATE_STOCK = connection.prepareStatement("UPDATE item SET qty = qty - ? WHERE code = ?");
             STM_EXISTS_BY_CUSTOMER_ID = connection.prepareStatement("SELECT * FROM \"order\" WHERE customer_id = ?");
             STM_EXISTS_BY_ITEM_CODE = connection.prepareStatement("SELECT  * FROM order_item WHERE item_code = ?");
             STM_GET_LAST_ID =  connection.prepareStatement("SELECT id FROM \"order\" ORDER BY id DESC LIMIT 1");
@@ -74,17 +75,20 @@ public class OrderDataAccess {
     }
 
     public static void saveOrder(String orderId, Date orderDate, String customerId,
-                                 List<OrderItem> orderItemList) throws SQLException{
+                                 List<OrderItem> orderItemList)throws SQLException{
         SingletonConnectionDataSource.getInstance().getConnection().setAutoCommit(false);
-        try{
+        try {
+            /* 1. Save Order */
             STM_INSERT_ORDER.setString(1, orderId);
             STM_INSERT_ORDER.setDate(2, orderDate);
             STM_INSERT_ORDER.setString(3, customerId);
             STM_INSERT_ORDER.executeUpdate();
 
+            /* 2. Save Order Item List */
+            /* 3. Update the Stock of each Order Item */
             for (OrderItem orderItem : orderItemList) {
                 STM_INSERT_ORDER_ITEM.setString(1, orderId);
-                STM_INSERT_ORDER_ITEM.setString(22, orderItem.getCode());
+                STM_INSERT_ORDER_ITEM.setString(2, orderItem.getCode());
                 STM_INSERT_ORDER_ITEM.setInt(3, orderItem.getQty());
                 STM_INSERT_ORDER_ITEM.setBigDecimal(4, orderItem.getUnitPrice());
                 STM_INSERT_ORDER_ITEM.executeUpdate();
@@ -93,13 +97,14 @@ public class OrderDataAccess {
                 STM_UPDATE_STOCK.setString(2, orderItem.getCode());
                 STM_UPDATE_STOCK.executeUpdate();
             }
+
             SingletonConnectionDataSource.getInstance().getConnection().commit();
         }catch (Throwable t){
             SingletonConnectionDataSource.getInstance().getConnection().rollback();
-        }finally {
+            throw new SQLException(t);
+        }finally{
             SingletonConnectionDataSource.getInstance().getConnection().setAutoCommit(true);
         }
-
     }
 
     public static String getLastOrderId() throws SQLException{
