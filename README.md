@@ -27,7 +27,7 @@ Before running the Smart POS application, ensure you have the following software
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/viraji95/smart-pos-project.git
+    git clone https://github.com/viraji95/smart-pos.git
     ```
 
 2. Set up the PostgreSQL database:
